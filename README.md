@@ -70,6 +70,7 @@ Whether you're a beginner seeking to learn or an expert aiming to innovate, **MC
 
 ## 📰 News
 
+- **[Coming Soon]** **MCITlib-v3** is expected to be released in **March/April 2026**! The new version will bring **enhanced model support** and **more applicable scenes** for a better user experience!
 - **[2026.1.2]** 🔥🔥🔥 We have updated the paper in [MCITlib](https://arxiv.org/pdf/2508.07307) with the latest results. Please feel free to check it out. 🎉🎉🎉
 - **[2025.10.14]** 🔥🔥🔥 **MCITlib-v2** has been updated! The latest version includes training and testing code for **8 mainstream multimodal continual instruction tuning methods**, compatible with **2 base models** and **3 continual instruction tuning datasets**. 🎉🎉🎉
 - **[2025.09.16]** We have updated the new version of the [paper](https://arxiv.org/pdf/2508.07307) and attached the accuracy matrix of each method for reference. :tada:
