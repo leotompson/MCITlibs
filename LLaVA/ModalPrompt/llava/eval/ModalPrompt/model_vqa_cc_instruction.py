@@ -115,7 +115,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_beams", type=int, default=1)
     parser.add_argument("--prefix-len", type=int, default=10)
     parser.add_argument("--cur-task", type=int, default=1)
-    parser.add_argument("--text-tower,",type = 'str')
+    parser.add_argument("--text-tower", type = str)
 
     args = parser.parse_args()
 
