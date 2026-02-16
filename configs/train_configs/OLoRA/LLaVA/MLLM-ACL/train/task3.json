@@ -1,4 +1,4 @@
-o{
+{
   "gpu_num": 4,
   "rank": 128,
   "expert_num": 4,
