@@ -383,7 +383,18 @@ class CoINMOELoraLinear(nn.Linear, CoINMOELoraLayer):
             result = F.linear(x, transpose(self.weight, self.fan_in_fan_out), bias=self.bias)
 
             x = x.to(self.lora_A[self.active_adapter].loraA[0].weight.dtype)
-            self.lora_router = self.lora_router.to(x.device)
+            # self.lora_router = self.lora_router.to(x.device)
+            # 1. 遍历 lora_router 内部的所有参数，检查是否在 meta 设备上
+            is_meta = any(p.device.type == 'meta' for p in self.lora_router.parameters())
+
+            # 2. 根据状态执行转移
+            if is_meta:
+                # 如果还在元设备上，用 to_empty 初始化
+                self.lora_router.to_empty(device=x.device)
+            else:
+                # 正常转移到目标显卡
+                self.lora_router = self.lora_router.to(x.device)
+
             router = self.lora_router[self.active_adapter](x)
             router = torch.softmax(router, dim=-1)
             for i in range(self.expert_num):

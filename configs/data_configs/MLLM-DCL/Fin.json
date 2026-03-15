@@ -1,6 +1,6 @@
 {
-  "train_path": "/mnt/ShareDB_6TB/datasets/MLLM_CL/datasets/MLLM-CL/Fin/train.json",
-  "test_path": "/mnt/ShareDB_6TB/datasets/MLLM_CL/datasets/MLLM-CL/Fin/test.json",
-  "train_folder": "/mnt/ShareDB_6TB/datasets/MLLM_CL/datasets/MLLM-CL/Fin",
-  "test_folder": "/mnt/ShareDB_6TB/datasets/MLLM_CL/datasets/MLLM-CL/Fin"
+  "train_path": "/data/taosen/data/UCIT/datasets/MLLM-CL/Fin/train.json",
+  "test_path": "/data/taosen/data/UCIT/datasets/MLLM-CL/Fin/test.json",
+  "train_folder": "/data/taosen/data/UCIT/datasets/MLLM-CL/Fin",
+  "test_folder": "/data/taosen/data/UCIT/datasets/MLLM-CL/Fin"
 }

@@ -5,6 +5,9 @@ import tqdm
 import torch
 import safetensors.torch as st
 
+#add
+from safetensors.torch import load_file  # 记得在文件顶部加上这个导入
+
 
 step = int(sys.argv[1])
 model_dir = sys.argv[2]
@@ -28,8 +31,8 @@ if step > 0:
 model_path_list = model_path_list[step: step + 1]
 
 for model_path in model_path_list:
-    lora_params = torch.load(os.path.join(model_path, 'adapter_model.bin'))
-    # lora_params = st.load_file(os.path.join(model_path, 'adapter_model.safetensors'))
+    # lora_params = torch.load(os.path.join(model_path, 'adapter_model.bin'))
+    lora_params = st.load_file(os.path.join(model_path, 'adapter_model.safetensors'))
     # lora_params = {k: v.cuda() for k, v in lora_params.items()}
 
     ori_param_set = set()

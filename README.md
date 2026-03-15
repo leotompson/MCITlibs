@@ -151,7 +151,7 @@ conda activate MCITlib
 conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
 cd LLaVA/LoRA-FT
 pip install --upgrade pip
-pip install -e .
+# pip install -e . --no-deps
 pip install -e ".[train]"
 ```
 For installing [flash-attn](https://github.com/Dao-AILab/flash-attention/releases), we recommend downloading version 2.6.3 from the official repository according to your CUDA and PyTorch versions, and placing it in a local directory for manual installation. For example:
@@ -164,12 +164,12 @@ We also provide an `environment.yml` file to help users identify missing depende
 
 Before running, please set all the model paths to your local paths. The paths that need to be modified are listed below, and don’t forget to update the dataset path as well.
 
-- Change `/mnt/haiyangguo/mywork/CL-MLLM/MCITlib_v2` to `/your_path/MCITlib`.
-- Change `/mnt/haiyangguo/mywork/FCIT/pre_trained/llava-v1.5-7b` to `/your_path/llava-v1.5-7b`.
+- Change `/data/taosen/code/MCITlib` to `/your_path/MCITlib`.
+- Change `/data/taosen/pretrain/llava-v1.5-7b` to `/your_path/llava-v1.5-7b`.
 - Change `/mnt/haiyangguo/mywork/CL-MLLM/pre_trained/Internvl-chat-7b` to `/your_path/Internvl-chat-7b`.
-- Change `/mnt/ShareDB_6TB/models/clip-vit-large-patch14-336` to `/your_path/clip-vit-large-patch14-336`.
-- Change `/mnt/ShareDB_6TB/models/InternViT-6B-224px` to `/your_path/InternViT-6B-224px`.
-- Change `/mnt/ShareDB_6TB/datasets/MLLM_CL/checkpoint` to `/your_path/checkpoint`.
+- Change `/data/taosen/pretrain/clip-vit-large-patch14-336` to `/your_path/clip-vit-large-patch14-336`.
+- Change `/data/taosen/pretrain/InternViT-6B-224px` to `/your_path/InternViT-6B-224px`.
+- Change `/data/taosen/code/MCITlib/checkpoint` to `/your_path/checkpoint`.
 
 After adjusting the path, users can modify parameters like `gpu_num` based on their actual operating environment. All parameter settings are integrated into the `configs/` folder.
 

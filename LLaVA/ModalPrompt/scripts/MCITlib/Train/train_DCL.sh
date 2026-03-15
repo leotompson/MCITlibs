@@ -1,36 +1,36 @@
 #!/bin/bash
 
-HARD_PATH=/mnt/haiyangguo/mywork/CL-MLLM/MCITlib_v2
+HARD_PATH=/data/taosen/code/MCITlib
 
-pip install -e .
+# pip install -e . --no-deps
 pip install -e ".[train]"
 bash scripts/MCITlib/Train/Task1.sh \
     $HARD_PATH/configs/modal_configs/llava.json \
     $HARD_PATH/configs/data_configs/MLLM-DCL/RS.json \
     $HARD_PATH/configs/train_configs/ModalPrompt/LLaVA/MLLM-DCL/train/task1.json
 
-pip install -e .
+# pip install -e . --no-deps
 pip install -e ".[train]"
 bash scripts/MCITlib/Train/Taskn.sh \
     $HARD_PATH/configs/modal_configs/llava.json \
     $HARD_PATH/configs/data_configs/MLLM-DCL/Med.json \
     $HARD_PATH/configs/train_configs/ModalPrompt/LLaVA/MLLM-DCL/train/task2.json
 
-pip install -e .
+# pip install -e . --no-deps
 pip install -e ".[train]"
 bash scripts/MCITlib/Train/Taskn.sh \
     $HARD_PATH/configs/modal_configs/llava.json \
     $HARD_PATH/configs/data_configs/MLLM-DCL/AD.json \
     $HARD_PATH/configs/train_configs/ModalPrompt/LLaVA/MLLM-DCL/train/task3.json
 
-pip install -e .
+# pip install -e . --no-deps
 pip install -e ".[train]"
 bash scripts/MCITlib/Train/Taskn.sh \
     $HARD_PATH/configs/modal_configs/llava.json \
     $HARD_PATH/configs/data_configs/MLLM-DCL/Sci.json \
     $HARD_PATH/configs/train_configs/ModalPrompt/LLaVA/MLLM-DCL/train/task4.json
 
-pip install -e .
+# pip install -e . --no-deps
 pip install -e ".[train]"
 bash scripts/MCITlib/Train/Taskn.sh \
     $HARD_PATH/configs/modal_configs/llava.json \

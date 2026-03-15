@@ -35,7 +35,7 @@ from llava import conversation as conversation_lib
 from llava.model import *
 from llava.mm_utils import tokenizer_image_token
 
-sys.path.append('/mnt/haiyangguo/mywork/CL-MLLM/MCITlib_v2/LLaVA/LoRA-FT')
+sys.path.append('/data/taosen/code/MCITlib/LLaVA/LoRA-FT')
 
 from CoIN.peft import PeftModel, TaskType, get_peft_model, CoINMOELoraConfig, WEIGHTS_NAME, set_peft_model_state_dict
 

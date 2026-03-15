@@ -36,7 +36,7 @@ fastapi==0.111.1
 fastapi-cli==0.0.4
 ffmpy==0.3.2
 filelock==3.15.4
-flash-attn @ file:///mnt/haiyangguo/mywork/CL-MLLM/CoIN/flash_attn-2.6.3%2Bcu118torch2.0cxx11abiFALSE-cp310-cp310-linux_x86_64.whl#sha256=f242b686e89e4bd88474ac4ceb7a5b19d738b4e63e2132f50edd7b6f397f8654
+flash-attn
 fonttools==4.53.1
 frozenlist==1.4.1
 fsspec==2024.6.1
@@ -169,10 +169,10 @@ tokenizers==0.15.1
 tomli==2.0.1
 tomlkit==0.12.0
 toolz==0.12.1
-torch==2.0.1
-torchaudio==2.0.2
-torchprofile==0.0.4
-torchvision==0.15.2
+torch
+torchaudio
+torchprofile
+torchvision
 tqdm==4.66.4
 transformers==4.37.2
 transformers-stream-generator==0.0.5

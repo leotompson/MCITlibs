@@ -22,7 +22,7 @@ import torch
 from llava.model import *
 from llava.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 
-sys.path.append('/mnt/haiyangguo/mywork/CL-MLLM/MCITlib_v2/LLaVA/LoRA-FT')
+sys.path.append('/data/taosen/code/MCITlib/LLaVA/LoRA-FT')
 
 def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", **kwargs):
     kwargs = {"device_map": device_map, **kwargs}
@@ -50,7 +50,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
         if 'lora' in model_name.lower() and model_base is not None:
             lora_cfg_pretrained = AutoConfig.from_pretrained(model_path)
             tokenizer = AutoTokenizer.from_pretrained(model_base, use_fast=False)
-            print('Loading LLaVA from base model...')
+            print(f'Loading LLaVA from base model...model_base: {model_base}, model_path: {model_path}')
             model = LlavaLlamaForCausalLM.from_pretrained(model_base, low_cpu_mem_usage=True, config=lora_cfg_pretrained, **kwargs)
             token_num, tokem_dim = model.lm_head.out_features, model.lm_head.in_features
             if model.lm_head.weight.shape[0] != token_num:

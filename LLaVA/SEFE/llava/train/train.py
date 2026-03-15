@@ -8,11 +8,31 @@ from typing import Dict, Optional, Sequence, List
 
 import torch
 
+# =========================================================================
+# 动态补丁：解决 transformers 向 accelerate 1.0+ 传递废弃参数的问题
+# =========================================================================
+import accelerate
+
+# 保存原始的初始化函数
+_original_accelerator_init = accelerate.Accelerator.__init__
+
+# 定义一个拦截函数
+def _patched_accelerator_init(self, *args, **kwargs):
+    # 如果 kwargs 里有 dispatch_batches，直接悄悄删掉
+    kwargs.pop('dispatch_batches', None)
+    # 调用原本的初始化函数
+    _original_accelerator_init(self, *args, **kwargs)
+
+# 替换回库中
+accelerate.Accelerator.__init__ = _patched_accelerator_init
+# =========================================================================
+
+
 import transformers
 import subprocess
 import tokenizers
 import sys
-sys.path.append('/mnt/haiyangguo/mywork/CL-MLLM/MCITlib_v2/LLaVA/SEFE')
+sys.path.append('/data/taosen/code/MCITlib/LLaVA/SEFE')
 
 from llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 from torch.utils.data import Dataset

@@ -3,16 +3,60 @@ import torch
 
 from torch.utils.data import Sampler
 
+# 核心类导入
 from transformers import Trainer
-from transformers.trainer import (
-    is_sagemaker_mp_enabled,
-    get_parameter_names,
-    has_length,
-    ALL_LAYERNORM_LAYERS,
-    ShardedDDPOption,
-    logger,
-)
+
+# 手动定义/补全缺失的检查函数，确保不再报错
+def is_sagemaker_mp_enabled():
+    return False
+
+def is_sagemaker_mp_available():
+    return False
+
+def has_length(dataset):
+    try:
+        return len(dataset) is not None
+    except (TypeError, NotImplementedError):
+        return False
+
+# 尝试导入其他确实存在的函数
+try:
+    from transformers.utils import (
+        is_accelerate_available,
+        is_bitsandbytes_available,
+        is_torch_tpu_available,
+    )
+    from transformers.integrations import is_deepspeed_available
+except ImportError:
+    # 备选路径
+    from transformers.utils.import_utils import (
+        is_accelerate_available,
+        is_bitsandbytes_available,
+    )
+    is_torch_tpu_available = lambda: False
+    is_deepspeed_available = lambda: False
+
+
 from typing import List, Optional
+from transformers.trainer_pt_utils import get_parameter_names
+import torch.nn as nn
+
+
+# 手动定义 ALL_LAYERNORM_LAYERS 以适配新版 Transformers
+ALL_LAYERNORM_LAYERS = [
+    nn.LayerNorm, 
+    nn.LocalResponseNorm, 
+    nn.GELU, 
+    nn.ReLU, 
+    nn.Sigmoid, 
+    nn.Tanh
+]
+
+# 如果删掉导入后报错说找不到 ShardedDDPOption，请添加这一行
+class ShardedDDPOption:
+    OFF = "off"
+    ZERO_DP_2 = "zero_dp_2"
+    ZERO_DP_3 = "zero_dp_3"
 
 
 def maybe_zero_3(param, ignore_status=False, name=None):
@@ -149,22 +193,23 @@ class LLaVATrainer(Trainer):
 
     def create_optimizer(self):
         """
-        Setup the optimizer.
-
-        We provide a reasonable default that works well. If you want to use something else, you can pass a tuple in the
-        Trainer's init through `optimizers`, or subclass and override this method in a subclass.
+        Setup the optimizer.适配新版 Transformers 4.46+
         """
+        # 1. 检查 SageMaker（使用我们之前定义的补丁函数）
         if is_sagemaker_mp_enabled():
             return super().create_optimizer()
-        if self.sharded_ddp == ShardedDDPOption.SIMPLE:
-            return super().create_optimizer()
+
+        # 移除原有的 sharded_ddp 判断逻辑，因为它已在新版中废弃
 
         opt_model = self.model
 
         if self.optimizer is None:
+            # 获取需要 weight decay 的参数名
             decay_parameters = get_parameter_names(opt_model, ALL_LAYERNORM_LAYERS)
             decay_parameters = [name for name in decay_parameters if "bias" not in name]
+            
             if self.args.mm_projector_lr is not None:
+                # 特殊处理 mm_projector 的学习率
                 projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
                 optimizer_grouped_parameters = [
                     {
@@ -195,6 +240,7 @@ class LLaVATrainer(Trainer):
                     },
                 ]
             else:
+                # 标准的分组参数
                 optimizer_grouped_parameters = [
                     {
                         "params": [
@@ -210,29 +256,23 @@ class LLaVATrainer(Trainer):
                     },
                 ]
 
+            # 获取优化器类和参数
             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
 
-            if self.sharded_ddp == ShardedDDPOption.SIMPLE:
-                self.optimizer = OSS(
-                    params=optimizer_grouped_parameters,
-                    optim=optimizer_cls,
-                    **optimizer_kwargs,
-                )
-            else:
-                self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
-                if optimizer_cls.__name__ == "Adam8bit":
-                    import bitsandbytes
-
-                    manager = bitsandbytes.optim.GlobalOptimManager.get_instance()
-
-                    skipped = 0
-                    for module in opt_model.modules():
-                        if isinstance(module, nn.Embedding):
-                            skipped += sum({p.data_ptr(): p.numel() for p in module.parameters()}.values())
-                            logger.info(f"skipped {module}: {skipped/2**20}M params")
-                            manager.register_module_override(module, "weight", {"optim_bits": 32})
-                            logger.debug(f"bitsandbytes: will optimize {module} in fp32")
-                    logger.info(f"skipped: {skipped/2**20}M params")
+            # 移除 sharded_ddp == ShardedDDPOption.SIMPLE 的判断，直接初始化优化器
+            self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
+            
+            if optimizer_cls.__name__ == "Adam8bit":
+                import bitsandbytes
+                manager = bitsandbytes.optim.GlobalOptimManager.get_instance()
+                skipped = 0
+                for module in opt_model.modules():
+                    if isinstance(module, nn.Embedding):
+                        skipped += sum({p.data_ptr(): p.numel() for p in module.parameters()}.values())
+                        logger.info(f"skipped {module}: {skipped/2**20}M params")
+                        manager.register_module_override(module, "weight", {"optim_bits": 32})
+                        logger.debug(f"bitsandbytes: will optimize {module} in fp32")
+                logger.info(f"skipped: {skipped/2**20}M params")
 
         return self.optimizer
 

@@ -3,16 +3,60 @@ import torch
 
 from torch.utils.data import Sampler
 
+# 核心类导入
 from transformers import Trainer
-from transformers.trainer import (
-    is_sagemaker_mp_enabled,
-    get_parameter_names,
-    has_length,
-    ALL_LAYERNORM_LAYERS,
-    ShardedDDPOption,
-    logger,
-)
+
+# 手动定义/补全缺失的检查函数，确保不再报错
+def is_sagemaker_mp_enabled():
+    return False
+
+def is_sagemaker_mp_available():
+    return False
+
+def has_length(dataset):
+    try:
+        return len(dataset) is not None
+    except (TypeError, NotImplementedError):
+        return False
+
+# 尝试导入其他确实存在的函数
+try:
+    from transformers.utils import (
+        is_accelerate_available,
+        is_bitsandbytes_available,
+        is_torch_tpu_available,
+    )
+    from transformers.integrations import is_deepspeed_available
+except ImportError:
+    # 备选路径
+    from transformers.utils.import_utils import (
+        is_accelerate_available,
+        is_bitsandbytes_available,
+    )
+    is_torch_tpu_available = lambda: False
+    is_deepspeed_available = lambda: False
+
+
 from typing import List, Optional
+from transformers.trainer_pt_utils import get_parameter_names
+import torch.nn as nn
+
+
+# 手动定义 ALL_LAYERNORM_LAYERS 以适配新版 Transformers
+ALL_LAYERNORM_LAYERS = [
+    nn.LayerNorm, 
+    nn.LocalResponseNorm, 
+    nn.GELU, 
+    nn.ReLU, 
+    nn.Sigmoid, 
+    nn.Tanh
+]
+
+# 如果删掉导入后报错说找不到 ShardedDDPOption，请添加这一行
+class ShardedDDPOption:
+    OFF = "off"
+    ZERO_DP_2 = "zero_dp_2"
+    ZERO_DP_3 = "zero_dp_3"
 
 
 def maybe_zero_3(param, ignore_status=False, name=None):
@@ -147,20 +191,124 @@ class LLaVATrainer(Trainer):
         else:
             return super()._get_train_sampler()
 
+    # def create_optimizer(self):
+    #     """
+    #     Setup the optimizer.
+
+    #     We provide a reasonable default that works well. If you want to use something else, you can pass a tuple in the
+    #     Trainer's init through `optimizers`, or subclass and override this method in a subclass.
+    #     """
+    #     if is_sagemaker_mp_enabled():
+    #         return super().create_optimizer()
+    #     if self.sharded_ddp == ShardedDDPOption.SIMPLE:
+    #         return super().create_optimizer()
+
+    #     opt_model = self.model
+
+    #     # for name, param in opt_model.named_parameters():
+    #     #     for k in ['lora_router.default.weight']:
+    #     #         if str(k) in name:
+    #     #             param.requires_grad = False
+
+    #     # txt_file_path = "params.txt"
+    #     # for name, param in opt_model.named_parameters():
+    #     #     for k in ['loraA.0.', 'loraB.0.', 'loraA.2.', 'loraB.2.', 'lora_router.default.weight']:
+    #     #         if str(k) in name:
+    #     #             with open(txt_file_path, "a") as txt_file:
+    #     #                 txt_file.write(f"{param}")
+        
+    #     # for name, p in opt_model.named_parameters():
+    #     #     print(name, p.requires_grad)
+
+    #     if self.optimizer is None:
+    #         decay_parameters = get_parameter_names(opt_model, ALL_LAYERNORM_LAYERS)
+    #         decay_parameters = [name for name in decay_parameters if "bias" not in name]
+    #         if self.args.mm_projector_lr is not None:
+    #             projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
+    #             optimizer_grouped_parameters = [
+    #                 {
+    #                     "params": [
+    #                         p for n, p in opt_model.named_parameters() if (n in decay_parameters and n not in projector_parameters and p.requires_grad)
+    #                     ],
+    #                     "weight_decay": self.args.weight_decay,
+    #                 },
+    #                 {
+    #                     "params": [
+    #                         p for n, p in opt_model.named_parameters() if (n not in decay_parameters and n not in projector_parameters and p.requires_grad)
+    #                     ],
+    #                     "weight_decay": 0.0,
+    #                 },
+    #                 {
+    #                     "params": [
+    #                         p for n, p in opt_model.named_parameters() if (n in decay_parameters and n in projector_parameters and p.requires_grad)
+    #                     ],
+    #                     "weight_decay": self.args.weight_decay,
+    #                     "lr": self.args.mm_projector_lr,
+    #                 },
+    #                 {
+    #                     "params": [
+    #                         p for n, p in opt_model.named_parameters() if (n not in decay_parameters and n in projector_parameters and p.requires_grad)
+    #                     ],
+    #                     "weight_decay": 0.0,
+    #                     "lr": self.args.mm_projector_lr,
+    #                 },
+    #             ]
+    #         else:
+    #             optimizer_grouped_parameters = [
+    #                 {
+    #                     "params": [
+    #                         p for n, p in opt_model.named_parameters() if (n in decay_parameters and p.requires_grad)
+    #                     ],
+    #                     "weight_decay": self.args.weight_decay,
+    #                 },
+    #                 {
+    #                     "params": [
+    #                         p for n, p in opt_model.named_parameters() if (n not in decay_parameters and p.requires_grad)
+    #                     ],
+    #                     "weight_decay": 0.0,
+    #                 },
+    #             ]
+
+    #         optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
+
+    #         if self.sharded_ddp == ShardedDDPOption.SIMPLE:
+    #             self.optimizer = OSS(
+    #                 params=optimizer_grouped_parameters,
+    #                 optim=optimizer_cls,
+    #                 **optimizer_kwargs,
+    #             )
+    #         else:
+    #             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
+    #             if optimizer_cls.__name__ == "Adam8bit":
+    #                 import bitsandbytes
+
+    #                 manager = bitsandbytes.optim.GlobalOptimManager.get_instance()
+
+    #                 skipped = 0
+    #                 for module in opt_model.modules():
+    #                     if isinstance(module, nn.Embedding):
+    #                         skipped += sum({p.data_ptr(): p.numel() for p in module.parameters()}.values())
+    #                         logger.info(f"skipped {module}: {skipped/2**20}M params")
+    #                         manager.register_module_override(module, "weight", {"optim_bits": 32})
+    #                         logger.debug(f"bitsandbytes: will optimize {module} in fp32")
+    #                 logger.info(f"skipped: {skipped/2**20}M params")
+
+    #     return self.optimizer
+
+
     def create_optimizer(self):
         """
-        Setup the optimizer.
-
-        We provide a reasonable default that works well. If you want to use something else, you can pass a tuple in the
-        Trainer's init through `optimizers`, or subclass and override this method in a subclass.
+        Setup the optimizer. 适配 Transformers 4.46+，同时保留用户原始调试逻辑。
         """
+        # 1. 补丁检查
         if is_sagemaker_mp_enabled():
             return super().create_optimizer()
-        if self.sharded_ddp == ShardedDDPOption.SIMPLE:
-            return super().create_optimizer()
+        
+        # 原有的 sharded_ddp 判断已删除，因为它会导致 AttributeError
 
         opt_model = self.model
 
+        # --- 保留你的原始逻辑开始 ---
         # for name, param in opt_model.named_parameters():
         #     for k in ['lora_router.default.weight']:
         #         if str(k) in name:
@@ -175,11 +323,13 @@ class LLaVATrainer(Trainer):
         
         # for name, p in opt_model.named_parameters():
         #     print(name, p.requires_grad)
+        # --- 保留你的原始逻辑结束 ---
 
         if self.optimizer is None:
             decay_parameters = get_parameter_names(opt_model, ALL_LAYERNORM_LAYERS)
             decay_parameters = [name for name in decay_parameters if "bias" not in name]
-            if self.args.mm_projector_lr is not None:
+            
+            if hasattr(self.args, "mm_projector_lr") and self.args.mm_projector_lr is not None:
                 projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
                 optimizer_grouped_parameters = [
                     {
@@ -227,27 +377,20 @@ class LLaVATrainer(Trainer):
 
             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
 
-            if self.sharded_ddp == ShardedDDPOption.SIMPLE:
-                self.optimizer = OSS(
-                    params=optimizer_grouped_parameters,
-                    optim=optimizer_cls,
-                    **optimizer_kwargs,
-                )
-            else:
-                self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
-                if optimizer_cls.__name__ == "Adam8bit":
-                    import bitsandbytes
-
-                    manager = bitsandbytes.optim.GlobalOptimManager.get_instance()
-
-                    skipped = 0
-                    for module in opt_model.modules():
-                        if isinstance(module, nn.Embedding):
-                            skipped += sum({p.data_ptr(): p.numel() for p in module.parameters()}.values())
-                            logger.info(f"skipped {module}: {skipped/2**20}M params")
-                            manager.register_module_override(module, "weight", {"optim_bits": 32})
-                            logger.debug(f"bitsandbytes: will optimize {module} in fp32")
-                    logger.info(f"skipped: {skipped/2**20}M params")
+            # 核心修复：直接使用常规优化器，跳过对 sharded_ddp 的检查
+            self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
+            
+            if optimizer_cls.__name__ == "Adam8bit":
+                import bitsandbytes
+                manager = bitsandbytes.optim.GlobalOptimManager.get_instance()
+                skipped = 0
+                for module in opt_model.modules():
+                    if isinstance(module, nn.Embedding):
+                        skipped += sum({p.data_ptr(): p.numel() for p in module.parameters()}.values())
+                        logger.info(f"skipped {module}: {skipped/2**20}M params")
+                        manager.register_module_override(module, "weight", {"optim_bits": 32})
+                        logger.debug(f"bitsandbytes: will optimize {module} in fp32")
+                logger.info(f"skipped: {skipped/2**20}M params")
 
         return self.optimizer
 

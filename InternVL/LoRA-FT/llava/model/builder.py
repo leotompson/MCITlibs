@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 import sys
-sys.path.append('/mnt/haiyangguo/mywork/CL-MLLM/MCITlib_v2/InternVL/LoRA-FT')
+sys.path.append('/data/taosen/code/MCITlib/InternVL/LoRA-FT')
 import os
 import warnings
 import shutil

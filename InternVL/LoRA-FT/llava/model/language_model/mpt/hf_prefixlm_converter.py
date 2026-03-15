@@ -1,3 +1,57 @@
+import torch
+
+# 在报错的文件顶部添加这个兼容函数
+def _expand_mask_bloom(mask, dtype, tgt_len=None):
+    batch_size, src_len = mask.size()
+    tgt_len = tgt_len if tgt_len is not None else src_len
+    expanded_mask = mask[:, None, None, :].expand(batch_size, 1, tgt_len, src_len).to(dtype)
+    inverted_mask = 1.0 - expanded_mask
+    return inverted_mask.masked_fill(inverted_mask.to(torch.bool), torch.finfo(dtype).min)
+
+def _make_causal_mask_bloom(input_ids_shape: torch.Size, dtype: torch.dtype, device: torch.device, past_key_values_length: int = 0):
+    """
+    补全 LLaVA 1.1.3 缺失的 causal mask 生成逻辑
+    """
+    bsz, tgt_len = input_ids_shape
+    mask = torch.full((tgt_len, tgt_len), torch.finfo(dtype).min, device=device)
+    mask_cond = torch.arange(mask.size(-1), device=device)
+    mask.masked_fill_(mask_cond < (mask_cond + 1).view(mask.size(-1), 1), 0)
+    mask = mask.to(dtype)
+
+    if past_key_values_length > 0:
+        mask = torch.cat([torch.zeros(tgt_len, past_key_values_length, dtype=dtype, device=device), mask], dim=-1)
+    return mask[None, None, :, :].expand(bsz, 1, tgt_len, tgt_len + past_key_values_length)
+
+def _expand_mask_opt(mask: torch.Tensor, dtype: torch.dtype, tgt_len: int = None):
+    """
+    针对 Transformers 4.46+ 补全缺失的 _expand_mask 逻辑
+    适配原代码中对 _expand_mask_opt 的调用
+    """
+    bsz, src_len = mask.size()
+    tgt_len = tgt_len if tgt_len is not None else src_len
+
+    # 这里的逻辑与原 OPT 模型内部实现一致
+    expanded_mask = mask[:, None, None, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
+    inverted_mask = 1.0 - expanded_mask
+
+    return inverted_mask.masked_fill(inverted_mask.to(torch.bool), torch.finfo(dtype).min)
+
+def _make_causal_mask_opt(input_ids_shape: torch.Size, dtype: torch.dtype, device: torch.device, past_key_values_length: int = 0):
+    """
+    针对 Transformers 4.46+ 补全缺失的 _make_causal_mask 逻辑
+    适配原代码中对 _make_causal_mask_opt 的调用
+    """
+    bsz, tgt_len = input_ids_shape
+    mask = torch.full((tgt_len, tgt_len), torch.finfo(dtype).min, device=device)
+    mask_cond = torch.arange(mask.size(-1), device=device)
+    mask.masked_fill_(mask_cond < (mask_cond + 1).view(mask.size(-1), 1), 0)
+    mask = mask.to(dtype)
+
+    if past_key_values_length > 0:
+        mask = torch.cat([torch.zeros(tgt_len, past_key_values_length, dtype=dtype, device=device), mask], dim=-1)
+    return mask[None, None, :, :].expand(bsz, 1, tgt_len, tgt_len + past_key_values_length)
+
+
 """Converts Huggingface Causal LM to Prefix LM.
 
 Conversion does lightweight surgery on a HuggingFace
@@ -12,16 +66,16 @@ from types import MethodType
 from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 from transformers.models.bloom.modeling_bloom import BaseModelOutputWithPastAndCrossAttentions, BloomForCausalLM, BloomModel, CausalLMOutputWithCrossAttentions, CrossEntropyLoss
-from transformers.models.bloom.modeling_bloom import _expand_mask as _expand_mask_bloom
-from transformers.models.bloom.modeling_bloom import _make_causal_mask as _make_causal_mask_bloom
+# from transformers.models.bloom.modeling_bloom import _expand_mask as _expand_mask_bloom
+# from transformers.models.bloom.modeling_bloom import _make_causal_mask as _make_causal_mask_bloom
 from transformers.models.bloom.modeling_bloom import logging
 from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel
 from transformers.models.gpt_neo.modeling_gpt_neo import GPTNeoForCausalLM
 from transformers.models.gpt_neox.modeling_gpt_neox import GPTNeoXForCausalLM
 from transformers.models.gptj.modeling_gptj import GPTJForCausalLM
 from transformers.models.opt.modeling_opt import OPTForCausalLM
-from transformers.models.opt.modeling_opt import _expand_mask as _expand_mask_opt
-from transformers.models.opt.modeling_opt import _make_causal_mask as _make_causal_mask_opt
+# from transformers.models.opt.modeling_opt import _expand_mask as _expand_mask_opt
+# from transformers.models.opt.modeling_opt import _make_causal_mask as _make_causal_mask_opt
 logger = logging.get_logger(__name__)
 _SUPPORTED_GPT_MODELS = (GPT2LMHeadModel, GPTJForCausalLM, GPTNeoForCausalLM, GPTNeoXForCausalLM)
 CAUSAL_GPT_TYPES = Union[GPT2LMHeadModel, GPTJForCausalLM, GPTNeoForCausalLM, GPTNeoXForCausalLM]

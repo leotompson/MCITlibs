@@ -128,7 +128,8 @@ class LlavaMetaForCausalLM(ABC):
 
     def encode_images(self, images):
         clip_image_features, image_features = self.get_model().get_vision_tower()(images)
-        image_features = self.get_model().mm_projector(image_features)
+        # image_features = self.get_model().mm_projector(image_features)
+        image_features = self.get_model().mm_projector.to(self.device)(image_features.to(self.device))
         return clip_image_features.to(self.device), image_features.to(self.device)
 
     def prepare_inputs_labels_for_multimodal(
@@ -179,7 +180,6 @@ class LlavaMetaForCausalLM(ABC):
 
         # text_guide_features: bs, 768
         text_guide_features = text_tower(clip_text_inputs)
-
         if self.training:
             current_image_features = image_guide_features  # [batch_size, feature_dim]
             current_text_features = text_guide_features  # [batch_size, feature_dim]

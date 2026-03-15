@@ -3,16 +3,60 @@ import torch
 
 from torch.utils.data import Sampler
 
+# 核心类导入
 from transformers import Trainer
-from transformers.trainer import (
-    is_sagemaker_mp_enabled,
-    get_parameter_names,
-    has_length,
-    ALL_LAYERNORM_LAYERS,
-    ShardedDDPOption,
-    logger,
-)
+
+# 手动定义/补全缺失的检查函数，确保不再报错
+def is_sagemaker_mp_enabled():
+    return False
+
+def is_sagemaker_mp_available():
+    return False
+
+def has_length(dataset):
+    try:
+        return len(dataset) is not None
+    except (TypeError, NotImplementedError):
+        return False
+
+# 尝试导入其他确实存在的函数
+try:
+    from transformers.utils import (
+        is_accelerate_available,
+        is_bitsandbytes_available,
+        is_torch_tpu_available,
+    )
+    from transformers.integrations import is_deepspeed_available
+except ImportError:
+    # 备选路径
+    from transformers.utils.import_utils import (
+        is_accelerate_available,
+        is_bitsandbytes_available,
+    )
+    is_torch_tpu_available = lambda: False
+    is_deepspeed_available = lambda: False
+
+
 from typing import List, Optional
+from transformers.trainer_pt_utils import get_parameter_names
+import torch.nn as nn
+
+
+# 手动定义 ALL_LAYERNORM_LAYERS 以适配新版 Transformers
+ALL_LAYERNORM_LAYERS = [
+    nn.LayerNorm, 
+    nn.LocalResponseNorm, 
+    nn.GELU, 
+    nn.ReLU, 
+    nn.Sigmoid, 
+    nn.Tanh
+]
+
+# 如果删掉导入后报错说找不到 ShardedDDPOption，请添加这一行
+class ShardedDDPOption:
+    OFF = "off"
+    ZERO_DP_2 = "zero_dp_2"
+    ZERO_DP_3 = "zero_dp_3"
 
 
 

@@ -8,7 +8,7 @@
 # replace_llama_attn_with_flash_attn()
 
 import sys
-sys.path.append('/mnt/haiyangguo/mywork/CL-MLLM/MCITlib_v2/InternVL/DISCO')
+sys.path.append('/data/taosen/code/MCITlib/InternVL/DISCO')
 from llava.train.train import train
 
 if __name__ == "__main__":

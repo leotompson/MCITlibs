@@ -17,7 +17,7 @@ In addition, using this codebase requires executing the following steps:
 
   ```bash
   pip install --upgrade pip  # enable PEP 660 support
-  pip install -e .
+  # pip install -e . --no-deps
   ```
 
 ## 📦 Model Preparation
@@ -247,7 +247,7 @@ ______________________________________________________________________
    conda create -n llava python=3.10 -y
    conda activate llava
    pip install --upgrade pip  # enable PEP 660 support
-   pip install -e .
+   # pip install -e . --no-deps
    ```
 
 3. Install additional packages for training cases
@@ -262,7 +262,7 @@ ______________________________________________________________________
 ```Shell
 git pull
 pip uninstall transformers
-pip install -e .
+# pip install -e . --no-deps
 ```
 
 ### LLaVA Weights

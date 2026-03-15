@@ -1,0 +1,58 @@
+bash scripts/MCITlib/Eval_UCIT/Eval_finetune1.sh 1
+
+Samples: 3000
+Accuracy: 91.07%
+
+# 启动命令，训练和推理
+cd /data/taosen/code/MCITlib/LLaVA
+sh scripts/MCITlib/Train/train_UCIT.sh
+
+MLLM-DCL MLLM-ACL文件是一个HF，但是很大，134G
+
+HiDe task 1的训练没问题，但是task 1的eval有问题，连续出现非版本的报错
+先是没有text tower，后是没有这个以下报错形状匹配不上
+
+Traceback (most recent call last):
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/data/taosen/code/MCITlib/LLaVA/HiDe/llava/eval/CoIN/model_others.py", line 120, in <module>
+    eval_model(args)
+  File "/data/taosen/code/MCITlib/LLaVA/HiDe/llava/eval/CoIN/model_others.py", line 72, in eval_model
+    output_ids = model.generate(
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/generation/utils.py", line 1479, in generate
+    return self.greedy_search(
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/generation/utils.py", line 2340, in greedy_search
+    outputs = self(
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/taosen/code/MCITlib/LLaVA/HiDe/llava/model/language_model/llava_llama.py", line 157, in forward
+    _inputs = super().prepare_inputs_for_generation(
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 1183, in forward
+    outputs = self.model(
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 1035, in forward
+    attention_mask = _prepare_4d_causal_attention_mask_for_sdpa(
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/modeling_attn_mask_utils.py", line 398, in _prepare_4d_causal_attention_mask_for_sdpa
+    expanded_4d_mask = attn_mask_converter.to_4d(
+  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/modeling_attn_mask_utils.py", line 137, in to_4d
+    expanded_attn_mask = causal_4d_mask.masked_fill(expanded_attn_mask.bool(), torch.finfo(dtype).min)
+RuntimeError: The size of tensor a (638) must match the size of tensor b (1275) at non-singleton dimension 3
+
+DISCO也涉及
+同款RuntimeError: The size of tensor a (638) must match the size of tensor b (1275) at non-singleton dimension 3问题
+
+MoEloRA全部训练完成，但是还剩两个IconQA的task 6没测
+KeyError: 'category_id'，推理完成了，但计算指标出现问题
+Attention 🚀: VizWiz没有一个task能测
+
+DISCO + HiDe + ModalPrompt
+ModalPrompt要两阶段，并且text tower也有，麻烦事儿，所以没有测试

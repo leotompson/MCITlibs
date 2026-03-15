@@ -10,7 +10,7 @@ Our environment is set up with CUDA 12.1. To ensure a smooth installation, it is
 conda create -n sefe python=3.10 -y
 conda activate sefe
 pip install --upgrade pip
-pip install -e .
+# pip install -e . --no-deps
 pip install -e ".[train]"
 pip install flash-attn==2.6.3 --no-build-isolation
 ```

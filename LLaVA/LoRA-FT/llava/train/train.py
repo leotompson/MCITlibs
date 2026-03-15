@@ -26,7 +26,7 @@ import torch
 import sys
 import transformers
 import subprocess
-sys.path.append('/mnt/haiyangguo/mywork/CL-MLLM/MCITlib_v2/LLaVA/LoRA-FT')
+sys.path.append('/data/taosen/code/MCITlib/LLaVA/LoRA-FT')
 
 from llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 from peft.utils import WEIGHTS_NAME, set_peft_model_state_dict
@@ -826,8 +826,19 @@ def load_model_from_previous_task(model, previous_task_model_path):
 
     from peft import PeftModel
     print('Loading LoRA weights...')
-    filename = os.path.join(previous_task_model_path, WEIGHTS_NAME)
-    adapters_weights = torch.load(filename, map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    # filename = os.path.join(previous_task_model_path, WEIGHTS_NAME)
+    # adapters_weights = torch.load(filename, map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    # modified bin和safetensors都可以加载
+    bin_path = os.path.join(previous_task_model_path, WEIGHTS_NAME)
+    safetensors_path = os.path.join(previous_task_model_path, "adapter_model.safetensors")
+    if os.path.exists(safetensors_path):
+        from safetensors.torch import load_file
+        adapters_weights = load_file(safetensors_path)
+    else:
+        adapters_weights = torch.load(
+            bin_path,
+            map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        )
     load_result = set_peft_model_state_dict(model, adapters_weights, adapter_name="default")
     print('Model is loaded...')
 
