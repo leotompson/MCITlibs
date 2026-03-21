@@ -1032,6 +1032,14 @@ def train():
     # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
     #     trainer.train(resume_from_checkpoint=True)
     # else:
+
+    # ==========================================
+    # 核心修复：确保所有传给 DeepSpeed 的参数在内存中都是连续的
+    # ==========================================
+    for param in model.parameters():
+        if not param.is_contiguous():
+            param.data = param.data.contiguous()
+
     trainer.train()
     trainer.save_state()
 

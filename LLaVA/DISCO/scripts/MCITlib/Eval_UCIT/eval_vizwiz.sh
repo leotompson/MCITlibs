@@ -33,6 +33,12 @@ CHUNKS=${#GPULIST[@]}
 
 RESULT_DIR="$RESULT_PATH/$TASK"
 
+
+echo ANNOTATION: $ANNOTATION
+echo RESULT_DIR/STAGE: $RESULT_DIR/$STAGE
+echo RESULT_DIR/STAGE/merge.jsonl: $RESULT_DIR/$STAGE/merge.jsonl
+
+
 for IDX in $(seq 0 $((CHUNKS-1))); do
     CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m llava.eval.CoIN.model_others \
         --model-path $MODELPATH \

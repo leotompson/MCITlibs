@@ -10,11 +10,11 @@ HARD_PATH=/data/taosen/code/MCITlib
 # bash scripts/MCITlib/Eval_UCIT/Eval_finetune1.sh 1
 
 # pip install -e . --no-deps
-bash scripts/MCITlib/Train/Taskn.sh \
-    $HARD_PATH/configs/modal_configs/llava.json \
-    $HARD_PATH/configs/data_configs/UCIT/ArxivQA.json \
-    $HARD_PATH/configs/train_configs/SEFE/LLaVA/UCIT/train/task2.json
-bash scripts/MCITlib/Eval_UCIT/Eval_finetune1.sh 2
+# bash scripts/MCITlib/Train/Taskn.sh \
+#     $HARD_PATH/configs/modal_configs/llava.json \
+#     $HARD_PATH/configs/data_configs/UCIT/ArxivQA.json \
+#     $HARD_PATH/configs/train_configs/SEFE/LLaVA/UCIT/train/task2.json
+# bash scripts/MCITlib/Eval_UCIT/Eval_finetune1.sh 2
 
 # pip install -e . --no-deps
 bash scripts/MCITlib/Train/Taskn.sh \

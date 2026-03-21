@@ -225,7 +225,6 @@ class AdaLoraModel(LoraModel):
 
     def forward(self, *args, **kwargs):
         outputs = self.model.forward(*args, **kwargs)
-
         # Calculate the orthogonal regularization
         orth_reg_weight = self.peft_config[self.trainable_adapter_name].orth_reg_weight
         assert orth_reg_weight > 0

@@ -1,54 +1,8 @@
-bash scripts/MCITlib/Eval_UCIT/Eval_finetune1.sh 1
-
-Samples: 3000
-Accuracy: 91.07%
-
 # 启动命令，训练和推理
 cd /data/taosen/code/MCITlib/LLaVA
 sh scripts/MCITlib/Train/train_UCIT.sh
 
 MLLM-DCL MLLM-ACL文件是一个HF，但是很大，134G
-
-HiDe task 1的训练没问题，但是task 1的eval有问题，连续出现非版本的报错
-先是没有text tower，后是没有这个以下报错形状匹配不上
-
-Traceback (most recent call last):
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/data/taosen/code/MCITlib/LLaVA/HiDe/llava/eval/CoIN/model_others.py", line 120, in <module>
-    eval_model(args)
-  File "/data/taosen/code/MCITlib/LLaVA/HiDe/llava/eval/CoIN/model_others.py", line 72, in eval_model
-    output_ids = model.generate(
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
-    return func(*args, **kwargs)
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/generation/utils.py", line 1479, in generate
-    return self.greedy_search(
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/generation/utils.py", line 2340, in greedy_search
-    outputs = self(
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/taosen/code/MCITlib/LLaVA/HiDe/llava/model/language_model/llava_llama.py", line 157, in forward
-    _inputs = super().prepare_inputs_for_generation(
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 1183, in forward
-    outputs = self.model(
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 1035, in forward
-    attention_mask = _prepare_4d_causal_attention_mask_for_sdpa(
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/modeling_attn_mask_utils.py", line 398, in _prepare_4d_causal_attention_mask_for_sdpa
-    expanded_4d_mask = attn_mask_converter.to_4d(
-  File "/home/ts/anaconda3/envs/MCITlib/lib/python3.10/site-packages/transformers/modeling_attn_mask_utils.py", line 137, in to_4d
-    expanded_attn_mask = causal_4d_mask.masked_fill(expanded_attn_mask.bool(), torch.finfo(dtype).min)
-RuntimeError: The size of tensor a (638) must match the size of tensor b (1275) at non-singleton dimension 3
-
-DISCO也涉及
-同款RuntimeError: The size of tensor a (638) must match the size of tensor b (1275) at non-singleton dimension 3问题
 
 MoEloRA全部训练完成，但是还剩两个IconQA的task 6没测
 KeyError: 'category_id'，推理完成了，但计算指标出现问题
@@ -56,3 +10,64 @@ Attention 🚀: VizWiz没有一个task能测
 
 DISCO + HiDe + ModalPrompt
 ModalPrompt要两阶段，并且text tower也有，麻烦事儿，所以没有测试
+
+
+HARD_PATH=/data/taosen/code/MCITlib
+    
+bash scripts/MCITlib/Eval_UCIT/eval_vizwiz.sh $HARD_PATH/configs/modal_configs/llava.json $HARD_PATH/configs/data_configs/UCIT/VizWiz.json $HARD_PATH/configs/train_configs/DISCO/LLaVA/UCIT/eval/task3.json
+
+ANNOTATION: /data/taosen/data/UCIT/instructions/VizWiz-caption/val_coco_type_3000.json
+RESULT_DIR/STAGE: ./results/UCIT/each_dataset/VizWiz/DISCO-task3
+RESULT_DIR/STAGE/merge.jsonl: ./results/UCIT/each_dataset/VizWiz/DISCO-task3/merge.jsonl
+
+
+Warning: Nashorn engine is planned to be removed from a future JDK release
+SPICE evaluation took: 2.550 min
+SPICE: 0.216
+Bleu_1: 75.23
+Bleu_2: 59.44
+Bleu_3: 45.45
+Bleu_4: 34.25
+METEOR: 27.87
+ROUGE_L: 57.19
+CIDEr: 92.08
+Samples: 3000
+Average: 55.93%
+
+# DISCO单独debug VizWiz推理没有Result.text
+python -m llava.eval.CoIN.eval_caption \
+    --annotation-file /data/taosen/data/UCIT/instructions/VizWiz-caption/val_coco_type_3000.json \
+    --result-file ./results/UCIT/each_dataset/VizWiz/DISCO-task3/merge.jsonl \
+    --output-dir ./results/UCIT/each_dataset/VizWiz/DISCO-task3 \
+
+DISCO复现：
+结果：
+MFT: 74.70666666666666
+MFN: 67.31666666666668
+MAA: 80.99652777777777
+BWT: -8.867999999999997
+
+分析：相比于MCITlib的
+75.87，69.66，81.60，-7.45略差
+但是MFN和MAA依旧是最好
+
+结论：DISCO是可靠的Baseline，可以在这上面加上contracon (if filter消融成功)
+
+# SEFE debug到task 3就没有测试成功，上次成功了task0，1的
+HARD_PATH=/data/taosen/code/MCITlib
+
+bash scripts/MCITlib/Eval_UCIT/eval_imagenet.sh $HARD_PATH/configs/modal_configs/llava.json $HARD_PATH/configs/data_configs/UCIT/ImageNet-R.json $HARD_PATH/configs/train_configs/SEFE/LLaVA/UCIT/eval/task3.json
+
+ANNOTATION: /data/taosen/data/UCIT/instructions/ImageNet-R/test_3000.json
+OUTPUT_DIR: /SEFE-task3
+RESULT_file: /SEFE-task3/merge.jsonl
+
+echo ANNOTATION: $DATA_PATH
+echo OUTPUT_DIR: $RESULT_DIR/$STAGE
+echo RESULT_file: $RESULT_DIR/$STAGE/merge.jsonl
+
+
+python -m llava.eval.CoIN.eval_deepseek_r1 \
+    --annotation-file /data/taosen/data/UCIT/instructions/ImageNet-R/test_3000.json \
+    --result-file ./results/UCIT/each_dataset/ImageNet-R/SEFE-task3/merge.jsonl \
+    --output-dir ./results/UCIT/each_dataset/ImageNet-R/SEFE-task3

@@ -77,7 +77,33 @@ def merge_captions(pred_file, val_file, output_file):
         json.dump(merged_data, f, indent=4, ensure_ascii=False)
 
 def eval_single(output_file, annotation_file, total):
-    coco = COCO(annotation_file)  # Ground truth JSON file
+    # coco = COCO(annotation_file)  # Ground truth JSON file
+
+    # 1. 读取原始标注文件
+    with open(annotation_file, 'r') as f:
+        gt_data = json.load(f)
+
+    # 2. 遍历并补充 category_id
+    if 'annotations' in gt_data:
+        for ann in gt_data['annotations']:
+            if 'category_id' not in ann:
+                ann['category_id'] = 1
+
+    # 3. 补充 categories 列表
+    if 'categories' not in gt_data:
+        gt_data['categories'] = [{'id': 1, 'name': 'dummy_category'}]
+
+    # 4. 存入临时文件并喂给 COCO
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as temp_f:
+        json.dump(gt_data, temp_f)
+        temp_file_name = temp_f.name
+
+    coco = COCO(temp_file_name)
+
+    # 5. 用完清理掉临时文件
+    os.remove(temp_file_name)
+    # ==========================================
     coco_res = coco.loadRes(output_file)  # Prediction JSON file
 
     coco_eval = COCOEvalCap(coco, coco_res)
